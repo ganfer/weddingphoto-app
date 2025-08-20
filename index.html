@@ -1,0 +1,184 @@
+ <?php
+
+session_start();
+require_once __DIR__ . '/config/config.php';
+// Konfiguration
+$password = "jasiundferdi";
+$cookie_name = "access_granted";
+$cookie_days = 7;
+
+function setAccessCookie($name, $days) {
+    setcookie($name, "true", time() + (86400 * $days), "/");
+}
+
+// Prüfen, ob Zugriff erlaubt
+$hasAccess = isset($_SESSION['access_granted']) || (isset($_COOKIE[$cookie_name]) && $_COOKIE[$cookie_name] === "true");
+
+// Token aus URL prüfen
+if (!$hasAccess && isset($_GET['token']) && in_array($_GET['token'], $valid_tokens)) {
+    $_SESSION['access_granted'] = true;
+    setAccessCookie($cookie_name, $cookie_days);
+    // URL ohne Token
+    $url = strtok($_SERVER["REQUEST_URI"], '?');
+    header("Location: $url");
+    exit;
+}
+
+// Passwort-Fallback
+if (!$hasAccess) {
+    if (isset($_POST['password']) && $_POST['password'] === $password) {
+        $_SESSION['access_granted'] = true;
+        setAccessCookie($cookie_name, $cookie_days);
+    } else {
+        // Login-Formular
+        echo '<!DOCTYPE html><html><head><title>Login</title></head><body>';
+        echo '<form method="post">';
+        echo '<input type="password" name="password" placeholder="Passwort eingeben" required>';
+        echo '<input type="submit" value="Login">';
+        echo '</form></body></html>';
+        exit;
+    }
+} 
+
+?>
+
+<!-- Ab hier kommt dein HTML-Inhalt -->
+
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hochzeits-Galerie</title>
+<style>
+body { font-family:sans-serif; background:#fdf6f0; text-align:center; margin:0; padding:0; }
+#login, #app { max-width:600px; margin:50px auto; }
+input, button { padding:10px; font-size:16px; margin:5px; border-radius:5px; }
+button { cursor:pointer; background:#e99c7f; border:none; color:white; }
+.gallery { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:20px; }
+.gallery img { width:150px; height:150px; object-fit:cover; border-radius:8px; cursor:pointer; transition:0.3s; }
+.gallery img:hover { transform:scale(1.05); }
+/* Lightbox */
+#lightbox { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:1000; }
+#lightbox img { max-width:90%; max-height:90%; border-radius:10px; }
+/* Upload Feedback */
+#uploadStatus { margin-top:10px; color:green; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <h1>Hochzeits-Galerie</h1>
+  <p>Bitte Passwort eingeben:</p>
+  <input type="password" id="pass" placeholder="Passwort">
+  <button id="loginBtn">Einloggen</button>
+  <p id="error" style="color:red;"></p>
+</div>
+
+<div id="app" style="display:none;">
+  <h1>Willkommen zur Hochzeits-Galerie 🎉</h1>
+  <input type="file" id="fileInput" multiple>
+  <button id="uploadBtn">Hochladen</button>
+  <button id="logoutBtn">Abmelden</button>
+  <p id="uploadStatus"></p>
+  <div class="gallery" id="gallery"></div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" onclick="this.style.display='none'">
+  <img id="lightbox-img" src="" alt="Bild">
+</div>
+
+<script>
+const PASSWORD = "jasiundferdi";
+
+document.getElementById('loginBtn').addEventListener('click', checkPassword);
+document.getElementById('logoutBtn').addEventListener('click', logout);
+document.getElementById('uploadBtn').addEventListener('click', uploadFiles);
+
+function checkPassword() {
+  const pass = document.getElementById('pass').value;
+  if(pass === PASSWORD){
+    localStorage.setItem('hochzeitsPasswort', PASSWORD);
+    showApp();
+  } else {
+    document.getElementById('error').textContent = "Falsches Passwort!";
+  }
+}
+
+function showApp() {
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').style.display='block';
+  loadGallery();
+}
+
+function logout() {
+  localStorage.removeItem('hochzeitsPasswort');
+  document.getElementById('app').style.display='none';
+  document.getElementById('login').style.display='block';
+  document.getElementById('pass').value='';
+  document.getElementById('error').textContent='';
+}
+
+window.onload = function() {
+  if(localStorage.getItem('hochzeitsPasswort') === PASSWORD) showApp();
+}
+
+async function loadGallery() {
+  const gallery = document.getElementById('gallery');
+  gallery.innerHTML = '';
+  try {
+    const res = await fetch('gallery.php');
+    const images = await res.json();
+    images.forEach(addImageToGallery);
+  } catch(e) {
+    console.error("Fehler beim Laden der Galerie:", e);
+  }
+}
+
+function addImageToGallery(src) {
+    if (src.toLowerCase().includes('upload/')) {
+      return; // Bild wird nicht hinzugefügt
+  }
+
+  const gallery = document.getElementById('gallery');
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = "Hochzeitsfoto";
+  img.onclick = () => {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox').style.display = 'flex';
+  };
+  gallery.appendChild(img);
+}
+
+async function uploadFiles() {
+  const files = document.getElementById('fileInput').files;
+  if(files.length === 0) return alert("Keine Datei ausgewählt");
+
+  const status = document.getElementById('uploadStatus');
+  status.textContent = "Upload läuft...";
+
+  const formData = new FormData();
+  for(const file of files) formData.append('files[]', file);
+
+  try {
+    const res = await fetch('upload.php', { method:'POST', body: formData });
+    const result = await res.text();
+    status.textContent = "Upload abgeschlossen!";
+    
+    // Neu hochgeladene Bilder direkt anzeigen
+    for(const file of files){
+      const localPath = 'upload/' + file.name;
+      addImageToGallery(localPath);
+    }
+
+  } catch(err) {
+    console.error(err);
+    status.textContent = "Fehler beim Upload!";
+  }
+}
+</script>
+</body>
+</html>
