@@ -1,0 +1,7 @@
+RewriteEngine On
+
+# Zugriff auf img-Ordner verbieten (direkt)
+RewriteRule ^img/ - [F,L]
+
+# Galerie-Bilder über image.php ausliefern
+RewriteRule ^img/(.+)$ image.php?file=$1 [L,QSA]
