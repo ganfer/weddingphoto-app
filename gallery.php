@@ -1,47 +1,49 @@
 <?php
-session_start();
-require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/token.php';
+checkAccess(); // Session prüfen
 
-if (!isset($_SESSION['access_granted']) &&
-    (!isset($_COOKIE['access_granted']) || $_COOKIE['access_granted'] !== "true")
-) {
-    http_response_code(403);
-    exit(json_encode(["error" => "Kein Zugriff"]));
+$imgDir = __DIR__ . '/img/';
+
+// Alle Bilddateien suchen
+$imgFiles = glob($imgDir . '*.{jpg,jpeg,png,gif}', GLOB_BRACE);
+
+// Falls keine Bilder gefunden
+if (!$imgFiles) {
+    header('Content-Type: application/json');
+    echo json_encode([], JSON_PRETTY_PRINT);
+    exit;
 }
 
-$cacheDir = __DIR__ . '/img/';
+// ETag & Last-Modified basierend auf allen Bildern
+$etag = md5(implode('', array_map('filemtime', $imgFiles)));
+$lastModified = gmdate('D, d M Y H:i:s', max(array_map('filemtime', $imgFiles))) . ' GMT';
+
+// Prüfen, ob der Client schon die aktuelle Version hat
+if ((isset($_SERVER['HTTP_IF_NONE_MATCH']) && $_SERVER['HTTP_IF_NONE_MATCH'] === $etag) ||
+    (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $_SERVER['HTTP_IF_MODIFIED_SINCE'] === $lastModified)) {
+    http_response_code(304); // Not Modified
+    exit;
+}
+
+header("Content-Type: application/json");
+header("Cache-Control: public, max-age=3600"); // 1 Stunde
+header("ETag: $etag");
+header("Last-Modified: $lastModified");
+
+// Bilderliste bauen
 $images = [];
-
-// Alle Bilddateien sammeln
-foreach (scandir($cacheDir) as $file) {
-    if (in_array(strtolower(pathinfo($file, PATHINFO_EXTENSION)), ['jpg','jpeg','png','gif'])) {
-        $path = $cacheDir . $file;
-        $timestamp = filemtime($path); // Standard: Dateisystemdatum
-
-        // EXIF-Datum auslesen (nur bei JPEG)
-        if (in_array(strtolower(pathinfo($file, PATHINFO_EXTENSION)), ['jpg','jpeg'])) {
-            $exif = @exif_read_data($path);
-            if (!empty($exif['DateTimeOriginal'])) {
-                $date = DateTime::createFromFormat('Y:m:d H:i:s', $exif['DateTimeOriginal']);
-                if ($date !== false) {
-                    $timestamp = $date->getTimestamp();
-                }
-            }
-        }
-
-        $images[] = [
-            "src" => '/img/' . urlencode($file),
-            "link" => '/img/' . urlencode($file),
-            "timestamp" => $timestamp
-        ];
-    }
+foreach ($imgFiles as $file) {
+    $images[] = [
+        'src' => 'img.php?file=' . urlencode(basename($file)),
+        'filename' => basename($file),
+    ];
 }
 
-// Nach Timestamp absteigend sortieren (neueste zuerst)
-usort($images, fn($a, $b) => $b['timestamp'] <=> $a['timestamp']);
 
-// Timestamp nicht mehr ausgeben
-$images = array_map(fn($img) => ["src" => $img["src"], "link" => $img["link"]], $images);
+usort($images, function($a, $b) {
+    return strcmp($b['filename'], $a['filename']);
+});
 
-header('Content-Type: application/json');
-echo json_encode($images);
+
+// JSON ausgeben
+echo json_encode($images, JSON_PRETTY_PRINT);
