@@ -1,0 +1,137 @@
+/* Allgemein */
+body {
+    font-family: sans-serif;
+    background: #fdf6f0;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+}
+
+#app {
+    max-width: 600px;
+    margin: 50px auto;
+}
+
+/* Buttons & Input Labels vereinheitlichen */
+button,
+.upload-label,
+.error-page button {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    background: #e99c7f;
+    border: none;
+    color: white;
+    cursor: pointer;
+    text-align: center;
+    min-width: 150px;
+    transition: background 0.2s;
+}
+
+button:hover,
+.upload-label:hover,
+.error-page button:hover {
+    background: #d8876a;
+}
+
+/* Upload Form */
+#uploadForm {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center; /* zentriert die Buttons horizontal */
+    align-items: center;     /* zentriert die Buttons vertikal */
+}
+
+/* Spinner für Upload */
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 3px solid rgba(0,0,0,0.2);
+    border-top-color: rgba(0,0,0,0.8);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Galerie */
+.gallery {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.gallery img {
+    width: calc(33.33% - 10px);
+    max-width: 350px;
+    height: auto;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.gallery img:hover {
+    transform: scale(1.05);
+}
+
+/* Lightbox */
+#lightbox {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+#lightbox img {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 10px;  
+}
+
+#lightbox span {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 3rem;
+    color: white;
+    padding: 0 10px;
+    cursor: pointer;
+    user-select: none;
+    z-index: 1001;
+}
+
+#prev { left: 10px; }
+#next { right: 10px; }
+
+/* Fehlerseite */
+.error-page {
+    max-width: 600px;
+    margin: 100px auto;
+    text-align: center;
+}
+
+.error-page h1 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+.error-page p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+}
