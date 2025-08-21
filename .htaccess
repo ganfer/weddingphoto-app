@@ -1,7 +1,37 @@
-RewriteEngine On
+Options -Indexes
 
-# Zugriff auf img-Ordner verbieten (direkt)
-RewriteRule ^img/ - [F,L]
 
-# Galerie-Bilder über image.php ausliefern
-RewriteRule ^img/(.+)$ image.php?file=$1 [L,QSA]
+<FilesMatch "^(\.htaccess|\.env)$">
+    Require all denied
+</FilesMatch>
+
+
+<Files "sync-to-nextcloud.php">
+    Order deny,allow
+    Deny from all
+    Allow from 127.0.0.1
+    Allow from 80.241.214.103
+</Files>
+
+<FilesMatch "^img/.*\.(jpg|jpeg|png|gif|webp|bmp)$">
+    Order deny,allow
+    Deny from all
+</FilesMatch>
+
+<Files "sync-to-nextcloud.php">
+    Order deny,allow
+    Deny from all
+    Allow from 127.0.0.1
+    Allow from 80.241.214.103
+</Files>
+
+<FilesMatch "^img/.*\.(jpg|jpeg|png|gif|webp|bmp)$">
+    Order deny,allow
+    Deny from all
+</FilesMatch>
+
+<Files "token.php">
+    Order deny,allow
+    Deny from all
+</Files>
+
