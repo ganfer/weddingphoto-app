@@ -4,14 +4,19 @@ header("Content-Type: text/plain"); // Für Statusmeldungen, JSON nur am Ende
 // -----------------------------
 // Konfiguration
 // -----------------------------
+
+require_once __DIR__ . '/config/config.php';
+
+$nextcloudUrl  = NEXTCLOUD_URL;
+$nextcloudUser = NEXTCLOUD_USER;
+$nextcloudPass = NEXTCLOUD_PASS;
+
+
 $uploadDir = __DIR__ . '/upload/';
-$cacheDir  = __DIR__ . '/img/';
-$nextcloudUrl  = 'https://nextcloud.xxx.de/remote.php/dav/files/admin/Photos/';
-$nextcloudUser = 'admin';
-$nextcloudPass = 'xxx';
+$imgDir = __DIR__ . '/img/';
 
 // Cache-Ordner erstellen, falls er nicht existiert
-if (!is_dir($cacheDir)) mkdir($cacheDir, 0755, true);
+if (!is_dir($imgDir)) mkdir($imgDir, 0755, true);
 
 // -----------------------------
 // 1) Upload aus Upload-Ordner
@@ -78,7 +83,7 @@ foreach ($xml->xpath("//d:response") as $file) {
         $filename = basename($href);
         $nextcloudFiles[] = $filename;
 
-        $localFile = $cacheDir . $filename;
+        $localFile = $imgDir . $filename;
 
         // Bild nur herunterladen, wenn es noch nicht im Cache ist
         if (!file_exists($localFile)) {
@@ -91,24 +96,24 @@ foreach ($xml->xpath("//d:response") as $file) {
 
             if ($imgData !== false) {
                 file_put_contents($localFile, $imgData);
-                echo "Cache aktualisiert: $filename\n";
+                echo "Image aktualisiert: $filename\n";
             }
         }
 
-        $images[] = 'cache/' . $filename;
+        $images[] = 'img.php?file=' . urlencode($filename);
     }
 }
 
 // Gelöschte Bilder im Cache entfernen (erst nach Cache-Aktualisierung)
-foreach (scandir($cacheDir) as $file) {
+foreach (scandir($imgDir ) as $file) {
     if (in_array(strtolower(pathinfo($file, PATHINFO_EXTENSION)), ['jpg','jpeg','png','gif'])) {
         if (!in_array($file, $nextcloudFiles)) {
-            unlink($cacheDir . $file);
-            echo "Cache gelöscht: $file\n";
+            unlink($imgDir  . $file);
+            echo "Image gelöscht: $file\n";
         }
     }
 }
 
 // JSON-Ausgabe der Cache-Dateien
-echo "\nAktuelle Cache-Dateien:\n";
+echo "\nAktuelle Dateien:\n";
 echo json_encode($images, JSON_PRETTY_PRINT);
