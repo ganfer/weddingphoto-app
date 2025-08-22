@@ -12,7 +12,7 @@ $imgDir = __DIR__ . '/img/';
 $path = null;
 
 // Bilddateien durchsuchen (case-insensitive)
-foreach (glob($imgDir . '*.{jpg,jpeg,png,gif}', GLOB_BRACE) as $f) {
+foreach (glob($imgDir . '*.{jpg,jpeg,png,gif,webp}', GLOB_BRACE) as $f) {
     if (strcasecmp(basename($f), $fileParam) === 0) {
         $path = $f;
         break;
@@ -24,8 +24,13 @@ if (!$path || !file_exists($path)) {
     exit("Datei nicht gefunden");
 }
 
-// MIME-Type bestimmen
-$mime = mime_content_type($path);
+// MIME-Type bestimmen und whitelisten
+$mime = mime_content_type($path) ?: '';
+$allowedMimes = ['image/jpeg','image/png','image/gif','image/webp'];
+if (!in_array($mime, $allowedMimes, true)) {
+    http_response_code(404);
+    exit("Datei nicht gefunden");
+}
 
 // Header: Caching komplett verhindern
 header("Content-Type: $mime");

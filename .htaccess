@@ -1,37 +1,22 @@
 Options -Indexes
 
-
 <FilesMatch "^(\.htaccess|\.env)$">
     Require all denied
 </FilesMatch>
 
-
+# Restrict Nextcloud sync script to specific IPs only
 <Files "sync-to-nextcloud.php">
-    Order deny,allow
-    Deny from all
-    Allow from 127.0.0.1
-    Allow from 80.241.214.103
+    Require all denied
+    Require ip 127.0.0.1 80.241.214.103
 </Files>
 
+# Deny direct access to cached images; must be served via img.php
 <FilesMatch "^img/.*\.(jpg|jpeg|png|gif|webp|bmp)$">
-    Order deny,allow
-    Deny from all
+    Require all denied
 </FilesMatch>
 
-<Files "sync-to-nextcloud.php">
-    Order deny,allow
-    Deny from all
-    Allow from 127.0.0.1
-    Allow from 80.241.214.103
-</Files>
-
-<FilesMatch "^img/.*\.(jpg|jpeg|png|gif|webp|bmp)$">
-    Order deny,allow
-    Deny from all
-</FilesMatch>
-
+# token.php is included server-side only
 <Files "token.php">
-    Order deny,allow
-    Deny from all
+    Require all denied
 </Files>
 
