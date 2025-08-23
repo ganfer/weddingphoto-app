@@ -1,0 +1,13 @@
+# Local secrets (never commit)
+config/secrets.php
+
+# OS/editor noise
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Upload/cache directories (optional; uncomment if needed)
+# upload/
+# img/
